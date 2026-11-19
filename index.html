@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#090d16">
+  <title>FPS Chess</title>
+  <link rel="stylesheet" href="./src/style.css">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","chess.js":"https://cdn.jsdelivr.net/npm/chess.js@1.4.0/dist/esm/chess.js"}}
+  </script>
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">♜</span><div><strong>FPS CHESS</strong><small>THINK. FIGHT. CHECKMATE.</small></div></div>
+      <div class="top-actions"><span id="phasePill" class="pill">CHESS PHASE</span><button id="newGameBtn" class="ghost">New game</button></div>
+    </header>
+    <section id="chessScreen" class="screen chess-screen">
+      <div class="side-panel">
+        <div class="eyebrow">MATCH STATUS</div><h1 id="statusTitle">Your move</h1><p id="statusText">Select one of your pieces, then choose a highlighted square.</p>
+        <div class="turn-card"><span class="turn-dot white"></span><div><b id="turnName">White to move</b><small>YOU PLAY WHITE</small></div></div>
+        <div class="eyebrow history-label">MOVE HISTORY</div><ol id="moveHistory" class="history"><li class="empty-history">The battle begins…</li></ol>
+        <div class="legend"><span><i class="dot legal"></i> Legal move</span><span><i class="dot capture"></i> Capture duel</span></div>
+        <button id="flipBoardBtn" class="secondary full">Flip board</button>
+      </div>
+      <div class="board-wrap"><div id="board3d" class="board3d"></div><div class="board-caption"><span>8 × 8 BATTLEFIELD</span><span>CLICK A PIECE TO SELECT</span></div></div>
+    </section>
+    <section id="combatScreen" class="screen combat-screen hidden">
+      <div id="combatView" class="combat-view">
+        <div class="combat-vignette"></div>
+        <div class="combat-hud">
+          <div class="combat-top"><div><span class="eyebrow">CAPTURE DUEL</span><h2 id="duelTitle">Pawn vs Knight</h2></div><div class="timer" id="duelTimer">DUEL</div></div>
+          <div class="health-row"><div class="health-block"><label>YOU <span id="playerPieceName">PAWN</span></label><div class="health-track"><i id="playerHealth"></i></div></div><div class="health-block enemy-health"><label>OPPONENT <span id="enemyPieceName">KNIGHT</span></label><div class="health-track"><i id="enemyHealth"></i></div></div></div>
+          <div class="crosshair">+</div>
+          <div class="combat-bottom"><div id="abilityText" class="ability-text">LMB Attack · E Ability · R Special</div><div class="combat-help">WASD move · Mouse look · Space jump · Shift sprint · Esc pause</div></div>
+        </div>
+        <div id="combatMessage" class="combat-message hidden"></div>
+        <button id="returnChessBtn" class="return-button hidden">Return to chessboard</button>
+      </div>
+    </section>
+    <footer class="footer"><span>FPS CHESS · PROTOTYPE 0.1</span><span>Chess rules powered by chess.js · 3D powered by Three.js</span></footer>
+  </main>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

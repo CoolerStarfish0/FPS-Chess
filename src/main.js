@@ -73,7 +73,7 @@ function onBoardClick(event){
  const hits=raycaster.intersectObjects(boardRoot.children,true);let square=null;
  for(const hit of hits){let obj=hit.object;while(obj&& !obj.userData.square)obj=obj.parent;if(obj?.userData.square){square=obj.userData.square;break;}}
  if(!square)return;
- if(selected&&legalTargets.includes(square)){const move=chess.moves({square:selected,verbose:true}).find(m=>m.to===square);if(move){if(move.captured){startDuel({from:move.from,to:move.to,piece:move.piece,captured:move.captured,promotion:move.promotion,color:'w'});}else{chess.move({from:move.from,to:move.to,promotion:'q'});selected=null;legalTargets=[];refreshBoard();setTimeout(aiMove,500);}return;}}
+ if(selected&&legalTargets.includes(square)){const move=chess.moves({square:selected,verbose:true}).find(m=>m.to===square);if(move){if(move.captured){startDuel({from:move.from,to:move.to,piece:move.piece,captured:move.captured,promotion:move.promotion,color:'w'});}else{chess.move({from:move.from,to:move.to});selected=null;legalTargets=[];refreshBoard();setTimeout(aiMove,500);}return;}}
  const p=chess.get(square);if(p&&p.color==='w'){selected=square;legalTargets=chess.moves({square,verbose:true}).map(m=>m.to);updateHighlights();}else{selected=null;legalTargets=[];updateHighlights();}
 }
 boardRenderer.domElement.addEventListener('click',onBoardClick);
@@ -118,9 +118,9 @@ function startDuel(move){
  window.addEventListener('keydown',keyDown);window.addEventListener('keyup',keyUp);arena.renderer.domElement.addEventListener('mousedown',firePrimary);
  lastTime=performance.now();animateArena();
 }
-function lockPointer(){if(!duel?.ended&&!paused)arena.renderer.domElement.requestPointerLock?.();}
-function pointerLockChanged(){if(document.pointerLockElement!==arena?.renderer.domElement&&duel&&!duel.ended){paused=true;$('combatView').classList.add('paused');}}
-function keyDown(e){keys[e.code]=true;if(e.code==='Escape'&&duel&&!duel.ended){paused=!paused;$('combatView').classList.toggle('paused',paused);}if(e.code==='KeyE')useAbility();if(e.code==='KeyR')useSpecial();if(e.code==='Space')e.preventDefault();}
+function lockPointer(){if(!duel?.ended)arena.renderer.domElement.requestPointerLock?.();}
+function pointerLockChanged(){if(!duel||duel.ended)return;paused=document.pointerLockElement!==arena?.renderer.domElement;$('combatView').classList.toggle('paused',paused);}
+function keyDown(e){keys[e.code]=true;if(e.code==='Escape'&&duel&&!duel.ended&&document.pointerLockElement===arena?.renderer.domElement)document.exitPointerLock?.();if(e.code==='KeyE')useAbility();if(e.code==='KeyR')useSpecial();if(e.code==='Space')e.preventDefault();}
 function keyUp(e){keys[e.code]=false;}
 function firePrimary(e){if(!duel||duel.ended||paused||e.button!==0)return;attack();}
 function attack(){
@@ -157,7 +157,7 @@ function updateHealth(){$('playerHealth').style.width=duel.playerHp+'%';$('enemy
 function endDuel(playerWon){
  if(duel.ended)return;duel.ended=true;document.exitPointerLock?.();const m=duel.move;
  const captureSucceeded=(playerWon&&m.color==='w')||(!playerWon&&m.color==='b');
- if(captureSucceeded){chess.move({from:m.from,to:m.to,promotion:'q'});$('combatMessage').textContent='CAPTURE CONFIRMED — ATTACKER WINS';}
+ if(captureSucceeded){chess.move({from:m.from,to:m.to,...(m.promotion?{promotion:m.promotion}:{})});$('combatMessage').textContent='CAPTURE CONFIRMED — ATTACKER WINS';}
  else{const fen=chess.fen().split(' ');fen[1]=m.color==='w'?'b':'w';chess.load(fen.join(' '));$('combatMessage').textContent='CAPTURE BLOCKED — DEFENDER HOLDS';}
  $('combatMessage').classList.remove('hidden');$('returnChessBtn').classList.remove('hidden');$('returnChessBtn').onclick=()=>finishDuel();
 }
@@ -172,7 +172,7 @@ function animateArena(now=performance.now()){
  const w=$('combatView').clientWidth,h=$('combatView').clientHeight;arena.camera.aspect=w/h;arena.camera.updateProjectionMatrix();arena.renderer.setSize(w,h,false);arena.renderer.render(arena.scene,arena.camera);
 }
 function updateArena(dt){
- const d=duel;d.elapsed+=dt;d.attackCooldown=Math.max(0,d.attackCooldown-dt);d.abilityCooldown=Math.max(0,d.abilityCooldown-dt);d.specialCooldown=Math.max(0,d.specialCooldown-dt);d.shield=Math.max(0,(d.shield||0)-dt);d.aura=Math.max(0,(d.aura||0)-dt);
+ const d=duel;d.elapsed+=dt;const remaining=Math.max(0,75-Math.floor(d.elapsed));$('duelTimer').textContent='TIME '+String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');d.attackCooldown=Math.max(0,d.attackCooldown-dt);d.abilityCooldown=Math.max(0,d.abilityCooldown-dt);d.specialCooldown=Math.max(0,d.specialCooldown-dt);d.shield=Math.max(0,(d.shield||0)-dt);d.aura=Math.max(0,(d.aura||0)-dt);
  const forward=new THREE.Vector3();arena.camera.getWorldDirection(forward);forward.y=0;forward.normalize();const right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();
  if(keys.Space&&d.player.position.y<=0.001)verticalVelocity=7;verticalVelocity-=18*dt;d.player.position.y=Math.max(0,d.player.position.y+verticalVelocity*dt);if(d.player.position.y===0)verticalVelocity=0;
  let move=new THREE.Vector3();if(keys.KeyW)move.add(forward);if(keys.KeyS)move.sub(forward);if(keys.KeyD)move.add(right);if(keys.KeyA)move.sub(right);if(move.lengthSq())move.normalize().multiplyScalar((keys.ShiftLeft?9:6)*dt);d.player.position.add(move);d.player.position.x=THREE.MathUtils.clamp(d.player.position.x,-9.5,9.5);d.player.position.z=THREE.MathUtils.clamp(d.player.position.z,-9.5,9.5);arena.camera.position.set(d.player.position.x,1.7+d.player.position.y,d.player.position.z);d.player.rotation.y=Math.atan2(-forward.x,-forward.z);
